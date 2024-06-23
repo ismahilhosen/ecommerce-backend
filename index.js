@@ -2,6 +2,7 @@
 const express = require('express');
 const app = express()
 const cors = require('cors');
+const morgan = require('morgan');
 const bodyParser = require('body-parser');
 require("./Config/db")
 
@@ -14,6 +15,7 @@ const PORT = process.env.PORT || 5000;
 //middeleware
 app.use(bodyParser.json())
 app.use(cors())
+app.use(morgan("dev"))
 
 app.get("/push" ,(req, res)=>{
     res.send("ping")

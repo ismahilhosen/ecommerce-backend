@@ -18,5 +18,8 @@
     "joi": "^17.13.3",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.4.3"
+  },
+  "devDependencies": {
+    "morgan": "^1.10.0"
   }
 }
