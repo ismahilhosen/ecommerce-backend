@@ -5,8 +5,9 @@ const createError = require("http-errors");
 const cors = require('cors');
 const morgan = require('morgan');
 const bodyParser = require('body-parser');
+const xssClean = require('xss-clean')
+const expressLimit = require('express-rate-limit')
 require("./Config/db")
-
 
 //intarnal imports
 const authRoute = require('./Routes/authRoute');
@@ -18,6 +19,15 @@ const ProductRoute = require("./Routes/ProductRoute")
 app.use(bodyParser.json())
 app.use(cors())
 app.use(morgan("dev"))
+app.use(xssClean())
+
+const limiter = expressLimit({
+    windowMs: 1*60*1000,
+    max:10,
+    message:"too many request"
+})
+
+app.use(limiter)
 
 app.get("/push" ,(req, res)=>{
     res.send("ping")
