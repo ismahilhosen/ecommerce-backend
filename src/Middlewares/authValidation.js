@@ -4,7 +4,11 @@ const signupValidation = async (req, res, next)=>{
     const schema = Joi.object({
         name: Joi.string().required().max(100).min(3),
         email: Joi.string().required().email(),
-        password: Joi.string().required().max(100).min(3)
+        password: Joi.string().required().max(100).min(3),
+        phone: Joi.string().required().max(14).min(11),
+        address: Joi.string(),
+        isAdmin: Joi.boolean(),
+        isBanned: Joi.boolean(),
     })
     const {error} = schema.validate(req.body)
     if(error){

@@ -1,26 +1,50 @@
-const { types, required } = require('joi');
-const mongoose = require('mongoose');
+const { types, required, boolean } = require("joi");
+const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 
-const userSchema = new Schema({
-    name:{
-        type: String,
-        required: true
-    },
-    email:{
-        type: String,
-        required: true,
-        unique: true
+const userSchema = new Schema(
+	{
+		name: {
+			type: String,
+			required: true,
+		},
+		email: {
+			type: String,
+			required: true,
+			unique: true,
+			validate: {
+				validator: function (v) {
+					return /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|.(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/.test(
+						v
+					);
+				},
+				message: "please enter your valide emaile",
+			},
+		},
+		password: {
+			type: String,
+			required: true,
+		},
+		phone: {
+			type: String,
+		},
+		address: {
+			type: String,
+		},
+		isAdmin: {
+			type: Boolean,
+			default: false,
+		},
+		isBanned: {
+			type: Boolean,
+			default: false,
+		},
+	},
+	{ timestamps: true }
+);
 
-    },
-    password:{
-        type: String,
-        required: true
-    }
-})
-
-const userModel = mongoose.model("users", userSchema)
+const userModel = mongoose.model("users", userSchema);
 
 module.exports = {
-    userModel
-}
+	userModel,
+};
