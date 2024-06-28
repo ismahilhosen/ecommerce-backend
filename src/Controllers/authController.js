@@ -1,11 +1,15 @@
 const { userModel } = require("../Models/usersModel");
 const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken")
 const { createJwtToken } = require("../helper/createJWTToken");
 const { successResponce } = require("./responceController");
-require("dotenv").config()
+const emailSendWithNodeMailer = require("../helper/email");
+const createHttpError = require("http-errors");
+const { clientUrl } = require("../Config/secret");
+require("dotenv").config();
+
 
 const jwtSecret = process.env.JWT_SECRET;
-
 
 const Signup = async (req, res, next) => {
 	try {
@@ -28,28 +32,47 @@ const Signup = async (req, res, next) => {
 			isBanned,
 		});
 		UserModel.password = await bcrypt.hash(password, 10);
-		const token = createJwtToken({ name, email, password, phone, address }, jwtSecret, "10m" )
-
-		const createEmail = {
+		const token = createJwtToken(
+			{ name, email, password, phone, address },
+			jwtSecret,
+			"10m"
+		);
+		const emailInfo = {
 			email,
 			subject: "Verify Your Account ",
 			html: `
 			<h2>dear ${name}</h2>
-			<p>please verify you <a href="${clientUrl}/api/v1/auth/varify/${token}"/></a></p>
-
-			`
+			<p> <a href="${clientUrl}/api/v1/auth/varify/${token}">please verify you</a></p>
+		
+			`,
+		};
+		const payload = {
+			token
 		}
-		const emailSend = async(emailInfo)=>{
-			try {
-				
-			} catch (error) {
-				
-			}
+		try {
+			await emailSendWithNodeMailer(emailInfo)
+		
+		} catch (error) {
+			next(createHttpError(500, "Email Send Fall"))
+			return
 		}
-
-		successResponce(res, 200, "jwt token created")
+		successResponce(res, {
+			statusCode: 200,
+			message: "please chack you email",
+			payload
+		})
 	} catch (error) {
-		next(error)
+		next(error);
+	}
+};
+const accountActive = async (req, res, next) => {
+	try {
+		const {token} = req.body;
+		const decode = jwt.verify(token, jwtSecret);
+		console.log(decode); 
+		successResponce(res, 200, `Go to your email ${email} and verify`);
+	} catch (error) {
+		next(error);
 	}
 };
 
@@ -72,25 +95,24 @@ const Login = async (req, res, next) => {
 			});
 		}
 
+		const jwtToken = createJwtToken({ email, password }, jwtSecret, "24h");
 
-		const jwtToken = createJwtToken({ email, password },jwtSecret,'24h')
 
-		res
-			.status(200)
-			.json({
-				message: "login success",
-				success: true,
-				jwtToken: jwtToken,
-				email: user.email,
-				name: user.name,
-			});
+		res.status(200).json({
+			message: "login success",
+			success: true,
+			jwtToken: jwtToken,
+			email: user.email,
+			name: user.name,
+		});
 	} catch (error) {
-		next(error)
+		next(error);
 	}
 };
 
 module.exports = {
 	Signup,
 	Login,
-	jwtSecret
+	jwtSecret,
+	accountActive
 };
