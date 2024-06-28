@@ -3,6 +3,7 @@ const { userModel } = require("../Models/usersModel");
 const { successResponce } = require("./responceController");
 const fs = require("fs");
 const { findWithId } = require("../Services/findItem");
+const deleteImage = require("../helper/deleteImage");
 
 const getUsers = async (req, res, next) => {
 	try {
@@ -52,7 +53,7 @@ const getUser = async (req, res, next) => {
 	try {
 		const id = req.params.id;
 		const option = { password: 0 };
-		const user = await findWithId(id, option);
+		const user = await findWithId(userModel, id, option);
 		return successResponce(res, {
 			message: "user get successfuully",
 			statusCode: 200,
@@ -70,22 +71,9 @@ const deleteUser = async (req, res, next) => {
 	try {
 		const id = req.params.id;
 		const option = { password: 0 };
-		const user = await findWithId(id, option);
+		const user = await findWithId(userModel,id, option);
 		const userImage = user.image;
-		if (userImage) {
-			fs.access(userImage, (err) => {
-				if (err) {
-					console.error("image dose not exist");
-				} else {
-					fs.unlink(userImage, (err) => {
-						if (err) {
-							throw err;
-						}
-					});
-				}
-			});
-		}
-
+		await deleteImage(userImage)
 		await userModel.findByIdAndDelete({ _id: id, isAdmin: false });
 
 		return successResponce(res, {

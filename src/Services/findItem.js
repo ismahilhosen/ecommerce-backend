@@ -1,10 +1,9 @@
 const createHttpError = require("http-errors");
 const mongoose = require("mongoose");
-const { userModel } = require("../Models/usersModel");
 
-const findWithId = async (id, option) => {
+const findWithId = async (model, id, option) => {
 	try {
-		const item = await userModel.findById(id, option);
+		const item = await model.findById(id, option);
 		if (!item) {
 			throw createHttpError(404, "user dose not exsit in this id");
 		}

@@ -1,8 +1,13 @@
 const { userModel } = require("../Models/usersModel");
 const bcrypt = require("bcrypt");
-const jwt = require("jsonwebtoken");
+const { createJwtToken } = require("../helper/createJWTToken");
+const { successResponce } = require("./responceController");
+require("dotenv").config()
 
-const Signup = async (req, res) => {
+const jwtSecret = process.env.JWT_SECRET;
+
+
+const Signup = async (req, res, next) => {
 	try {
 		const { name, email, password, phone, address, isAdmin, isBanned } =
 			req.body;
@@ -23,18 +28,32 @@ const Signup = async (req, res) => {
 			isBanned,
 		});
 		UserModel.password = await bcrypt.hash(password, 10);
-		await UserModel.save();
-		res
-			.status(200)
-			.json({ message: "user created successfully", success: true });
+		const token = createJwtToken({ name, email, password, phone, address }, jwtSecret, "10m" )
+
+		const createEmail = {
+			email,
+			subject: "Verify Your Account ",
+			html: `
+			<h2>dear ${name}</h2>
+			<p>please verify you <a href="${clientUrl}/api/v1/auth/varify/${token}"/></a></p>
+
+			`
+		}
+		const emailSend = async(emailInfo)=>{
+			try {
+				
+			} catch (error) {
+				
+			}
+		}
+
+		successResponce(res, 200, "jwt token created")
 	} catch (error) {
-		res
-			.status(500)
-			.json({ message: "internal server error", success: false, error });
+		next(error)
 	}
 };
 
-const Login = async (req, res) => {
+const Login = async (req, res, next) => {
 	try {
 		const { email, password } = req.body;
 		const user = await userModel.findOne({ email });
@@ -52,11 +71,9 @@ const Login = async (req, res) => {
 				success: false,
 			});
 		}
-		const jwtToken = jwt.sign(
-			{ email: user.email, _id: user._id },
-			process.env.JWT_SECRET,
-			{ expiresIn: "24h" }
-		);
+
+
+		const jwtToken = createJwtToken({ email, password },jwtSecret,'24h')
 
 		res
 			.status(200)
@@ -68,13 +85,12 @@ const Login = async (req, res) => {
 				name: user.name,
 			});
 	} catch (error) {
-		res
-			.status(500)
-			.json({ message: "internal server error", success: false, error });
+		next(error)
 	}
 };
 
 module.exports = {
 	Signup,
 	Login,
+	jwtSecret
 };
