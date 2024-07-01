@@ -1,5 +1,7 @@
 const Joi = require('joi');
 
+
+
 const signupValidation = async (req, res, next)=>{
     const schema = Joi.object({
         name: Joi.string().required().max(100).min(3),
@@ -9,6 +11,7 @@ const signupValidation = async (req, res, next)=>{
         address: Joi.string(),
         isAdmin: Joi.boolean(),
         isBanned: Joi.boolean(),
+        image: Joi.string(),
     })
     const {error} = schema.validate(req.body)
     if(error){

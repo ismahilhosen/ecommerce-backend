@@ -1,6 +1,6 @@
 const { userModel } = require("../Models/usersModel");
 const bcrypt = require("bcrypt");
-const jwt = require("jsonwebtoken")
+const jwt = require("jsonwebtoken");
 const { createJwtToken } = require("../helper/createJWTToken");
 const { successResponce } = require("./responceController");
 const emailSendWithNodeMailer = require("../helper/email");
@@ -8,13 +8,16 @@ const createHttpError = require("http-errors");
 const { clientUrl } = require("../Config/secret");
 require("dotenv").config();
 
-
 const jwtSecret = process.env.JWT_SECRET;
 
 const Signup = async (req, res, next) => {
 	try {
 		const { name, email, password, phone, address, isAdmin, isBanned } =
 			req.body;
+
+
+
+		
 		const user = await userModel.findOne({ email });
 		if (user) {
 			return res.status(409).json({
@@ -29,11 +32,13 @@ const Signup = async (req, res, next) => {
 			phone,
 			address,
 			isAdmin,
-			isBanned,
+			isBanned
 		});
+
+
 		UserModel.password = await bcrypt.hash(password, 10);
 		const token = createJwtToken(
-			{ name, email, password, phone, address },
+			{ name, email, password, phone, address, image: req.file ? req.file.buffer.toString("base64") : null },
 			jwtSecret,
 			"10m"
 		);
@@ -47,30 +52,30 @@ const Signup = async (req, res, next) => {
 			`,
 		};
 		const payload = {
-			token
-		}
+			token,
+		};
 		try {
-			await emailSendWithNodeMailer(emailInfo)
-		
+			// await emailSendWithNodeMailer(emailInfo);
 		} catch (error) {
-			next(createHttpError(500, "Email Send Fall"))
-			return
+			next(createHttpError(500, "Email Send Fall"));
+			return;
 		}
 		successResponce(res, {
 			statusCode: 200,
 			message: "please chack you email",
-			payload
-		})
+			payload,
+		});
 	} catch (error) {
 		next(error);
 	}
 };
 const accountActive = async (req, res, next) => {
 	try {
-		const {token} = req.body;
+		const { token } = req.body;
 		const decode = jwt.verify(token, jwtSecret);
-		console.log(decode); 
-		successResponce(res, 200, `Go to your email ${email} and verify`);
+		await userModel.create(decode);
+
+		successResponce(res, 200, "data save successfully");
 	} catch (error) {
 		next(error);
 	}
@@ -97,7 +102,6 @@ const Login = async (req, res, next) => {
 
 		const jwtToken = createJwtToken({ email, password }, jwtSecret, "24h");
 
-
 		res.status(200).json({
 			message: "login success",
 			success: true,
@@ -114,5 +118,5 @@ module.exports = {
 	Signup,
 	Login,
 	jwtSecret,
-	accountActive
+	accountActive,
 };

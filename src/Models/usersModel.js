@@ -28,6 +28,10 @@ const userSchema = new Schema(
 		phone: {
 			type: String,
 		},
+		image: {
+			type: Buffer,
+			contentType: String
+		},
 		address: {
 			type: String,
 		},
@@ -38,8 +42,9 @@ const userSchema = new Schema(
 		isBanned: {
 			type: Boolean,
 			default: false,
-		},
+		
 	},
+},
 	{ timestamps: true }
 );
 
