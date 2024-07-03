@@ -14,10 +14,6 @@ const Signup = async (req, res, next) => {
 	try {
 		const { name, email, password, phone, address, isAdmin, isBanned } =
 			req.body;
-
-
-
-		
 		const user = await userModel.findOne({ email });
 		if (user) {
 			return res.status(409).json({
@@ -32,13 +28,21 @@ const Signup = async (req, res, next) => {
 			phone,
 			address,
 			isAdmin,
-			isBanned
+			isBanned,
 		});
-
 
 		UserModel.password = await bcrypt.hash(password, 10);
 		const token = createJwtToken(
-			{ name, email, password, phone, address, image: req.file ? req.file.buffer.toString("base64") : null },
+			{
+				name,
+				email,
+				password,
+				phone,
+				address,
+				image: req.file
+					? req.file.buffer.toString("base64")
+					: "../../public/images/users/download.jpeg",
+			},
 			jwtSecret,
 			"10m"
 		);
@@ -75,7 +79,10 @@ const accountActive = async (req, res, next) => {
 		const decode = jwt.verify(token, jwtSecret);
 		await userModel.create(decode);
 
-		successResponce(res, 200, "data save successfully");
+		successResponce(res, {
+			statusCode: 200,
+			message: "data save successfully",
+		});
 	} catch (error) {
 		next(error);
 	}
@@ -99,15 +106,35 @@ const Login = async (req, res, next) => {
 				success: false,
 			});
 		}
+		if (user.isBanned) {
+			throw createHttpError(409, "user is banned");
+		}
+		const accessToken = createJwtToken({user}, jwtSecret, "24h");
 
-		const jwtToken = createJwtToken({ email, password }, jwtSecret, "24h");
+		res.cookie("accessToken", accessToken, {
+			maxAge: 15 * 60 * 1000,
+			secure: true,
+			httpOnly: true,
+		});
 
 		res.status(200).json({
 			message: "login success",
 			success: true,
-			jwtToken: jwtToken,
+			jwtToken: accessToken,
 			email: user.email,
 			name: user.name,
+		});
+	} catch (error) {
+		next(error);
+	}
+};
+const Logout = async (req, res, next) => {
+	try {
+		res.clearCookie("accessToken");
+
+		successResponce(res, {
+			message: "logout seccessful",
+			statusCode: 200,
 		});
 	} catch (error) {
 		next(error);
@@ -119,4 +146,5 @@ module.exports = {
 	Login,
 	jwtSecret,
 	accountActive,
+	Logout,
 };

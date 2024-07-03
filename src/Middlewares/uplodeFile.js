@@ -1,8 +1,11 @@
-const multer = require('multer');
-const path = require('path');
-const createHttpError = require('http-errors');
-const { UPLODE_USER_IMAGE_DIR, MAX_FILE_SIZE, FILE_EXTRANTION } = require('../Config/config');
-
+const multer = require("multer");
+const path = require("path");
+const createHttpError = require("http-errors");
+const {
+	UPLODE_USER_IMAGE_DIR,
+	MAX_FILE_SIZE,
+	FILE_EXTRANTION,
+} = require("../Config/config");
 
 //save image type string on server
 // const storage = multer.diskStorage({
@@ -24,26 +27,20 @@ const { UPLODE_USER_IMAGE_DIR, MAX_FILE_SIZE, FILE_EXTRANTION } = require('../Co
 //     cb(null, true);
 //   }
 
+const storage = multer.memoryStorage();
 
-const storage = multer.memoryStorage()
+const fileFilter = (req, file, cb) => {
+	if (!file.mimetype.startsWith("image/")) {
+		return cb(new Error("only image file is allowed"), false);
+	}
+	if (!file.size > MAX_FILE_SIZE) {
+		return cb(new Error("file too larger"), false);
+	}
+	if (!FILE_EXTRANTION.includes(file.mimetype)) {
+		return cb(new Error("this file is not allowed"), false);
+	}
+	cb(null, true);
+};
 
-  const fileFilter = (req, file, cb)=>{
-    const extName = path.extname(file.originalname);
-    if(!file.mimetype.startsWith("image/")){
-      return cb( new Error("only image file is allowed"), false);
-    }
-    if(!file.size > MAX_FILE_SIZE){
-      return cb( new Error("file too larger"), false);
-    }
-    if(!FILE_EXTRANTION.includes(file.mimetype)){
-      return cb( new Error("this file is not allowed"), false);
-    }
-    cb(null, true);
-  }
-
-
-  
-  const upload = multer({ storage: storage,
-    fileFilter: fileFilter
-   })
-  module.exports = upload;
+const upload = multer({ storage: storage, fileFilter: fileFilter });
+module.exports = upload;

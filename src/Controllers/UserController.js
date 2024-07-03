@@ -1,9 +1,9 @@
 const createHttpError = require("http-errors");
 const { userModel } = require("../Models/usersModel");
 const { successResponce } = require("./responceController");
-const fs = require("fs");
 const { findWithId } = require("../Services/findItem");
 const deleteImage = require("../helper/deleteImage");
+const bcrypt = require("bcrypt");
 
 const getUsers = async (req, res, next) => {
 	try {
@@ -86,4 +86,36 @@ const deleteUser = async (req, res, next) => {
 	}
 };
 
-module.exports = { getUsers, getUser, deleteUser };
+const updateUserById = async (req, res, next) => {
+	try {
+		const id = req.params.id;
+		const userOption = {new: true, runValidators: true, context: 'query'};
+		const user = await findWithId(userModel, id, userOption);
+		// const {name, password, address, phone,email} = req.body
+		const image = req.file;
+		const update = {};
+
+		for(let key in req.body){
+			if(["name", "email", "phone", "address", "password"].includes(key)){
+				update[key] = req.body[key];
+			}
+		}
+		if(image){
+			if(image.size > 1024 * 1024 * 2){
+				throw createHttpError(400, "file size id too large. it must greter then 2mb")
+			}
+			update.image = image.buffer.toString("base64")
+		}
+		const upadateUser = await userModel.findByIdAndUpdate(id,update,userOption)
+		return successResponce(res, {
+			message: "user updated successfuully",
+			statusCode: 200,
+			success: true,
+			payload: {upadateUser}
+		});
+	} catch (error) {
+		next(error);
+	}
+};
+
+module.exports = { getUsers, getUser, deleteUser, updateUserById };

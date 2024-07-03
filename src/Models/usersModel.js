@@ -1,4 +1,4 @@
-const { types, required, boolean } = require("joi");
+const { types, required, boolean, binary } = require("joi");
 const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 
@@ -30,7 +30,8 @@ const userSchema = new Schema(
 		},
 		image: {
 			type: Buffer,
-			contentType: String
+			contentType: String,
+			default: "../../public/images/users/download.jpeg"
 		},
 		address: {
 			type: String,
