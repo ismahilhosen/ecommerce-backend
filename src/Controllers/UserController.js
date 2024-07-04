@@ -108,7 +108,26 @@ const updateUserById = async (req, res, next) => {
 		}
 		const upadateUser = await userModel.findByIdAndUpdate(id,update,userOption)
 		return successResponce(res, {
-			message: "user updated successfuully",
+			message: "user updated successfully",
+			statusCode: 200,
+			success: true,
+			payload: {upadateUser}
+		});
+	} catch (error) {
+		next(error);
+	}
+};
+const banUserById = async (req, res, next) => {
+	try {
+		const id = req.params.id;
+		const userOption = {};
+		const user = await findWithId(userModel, id, userOption);
+		const upadateUser = await userModel.findByIdAndUpdate(id,{isBanned: true},userOption)
+		if(user.isBanned){
+			throw createHttpError(401, "user is already banned")
+		}
+		return successResponce(res, {
+			message: "user was banned successfully",
 			statusCode: 200,
 			success: true,
 			payload: {upadateUser}
@@ -118,4 +137,25 @@ const updateUserById = async (req, res, next) => {
 	}
 };
 
-module.exports = { getUsers, getUser, deleteUser, updateUserById };
+const unBanUserById = async (req, res, next) => {
+	try {
+		const id = req.params.id;
+		const userOption = {};
+		const user = await findWithId(userModel, id, userOption);
+		const upadateUser = await userModel.findByIdAndUpdate(id,{isBanned: false},userOption)
+		if(!user.isBanned){
+			throw createHttpError(401, "user is already unbanned")
+		}
+
+		return successResponce(res, {
+			message: "User was unBanned successfully",
+			statusCode: 200,
+			success: true,
+			payload: {upadateUser}
+		});
+	} catch (error) {
+		next(error);
+	}
+};
+
+module.exports = { getUsers, getUser, deleteUser, updateUserById, banUserById, unBanUserById };

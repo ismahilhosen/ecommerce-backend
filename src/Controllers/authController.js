@@ -112,7 +112,7 @@ const Login = async (req, res, next) => {
 		const accessToken = createJwtToken({user}, jwtSecret, "24h");
 
 		res.cookie("accessToken", accessToken, {
-			maxAge: 15 * 60 * 1000,
+			maxAge: 60 * 60 * 60 * 1000,
 			secure: true,
 			httpOnly: true,
 		});
