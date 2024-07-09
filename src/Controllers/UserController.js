@@ -4,6 +4,7 @@ const { successResponce } = require("./responceController");
 const { findWithId } = require("../Services/findItem");
 const deleteImage = require("../helper/deleteImage");
 const bcrypt = require("bcrypt");
+const {manageUserService, findUsers, findUserById, deleteUserById, UpdateUser} = require("../Services/userServices");
 
 const getUsers = async (req, res, next) => {
 	try {
@@ -11,37 +12,15 @@ const getUsers = async (req, res, next) => {
 		const page = Number(req.query.page) || 1;
 		const limit = Number(req.query.limit) || 2;
 		const skipValue = (page - 1) * limit;
-		//search regex
-		const searchRegExp = new RegExp(".*" + search + ".*", "i");
-
-		const filter = {
-			isAdmin: { $ne: true },
-			$or: [
-				{ name: { $regex: searchRegExp } },
-				{ email: { $regex: searchRegExp } },
-				{ phone: { $regex: searchRegExp } },
-			],
-		};
-		// without password filter
-		const option = { password: 0 };
-
-		const users = await userModel
-			.find(filter, option)
-			.skip(skipValue)
-			.limit(limit);
-		const countTotal = await userModel.find(filter).countDocuments();
-		if (users.length === 0) throw createHttpError(404, "no data found");
+		
+		const {users, pageination} = await findUsers(search, limit, page,skipValue);
 
 		return successResponce(res, {
 			successCode: 200,
 			message: "data return success",
 			payload: {
 				users,
-				pageination: {
-					totalPage: Math.ceil(countTotal / limit),
-					previousPage: page - 1 > 0 ? page - 1 : null,
-					nextPage: page + 1 < Math.ceil(countTotal / limit) ? page + 1 : null,
-				},
+				pageination
 			},
 		});
 	} catch (error) {
@@ -53,7 +32,7 @@ const getUser = async (req, res, next) => {
 	try {
 		const id = req.params.id;
 		const option = { password: 0 };
-		const user = await findWithId(userModel, id, option);
+		const user = await findUserById(userModel, id, option)
 		return successResponce(res, {
 			message: "user get successfuully",
 			statusCode: 200,
@@ -71,11 +50,8 @@ const deleteUser = async (req, res, next) => {
 	try {
 		const id = req.params.id;
 		const option = { password: 0 };
-		const user = await findWithId(userModel,id, option);
-		const userImage = user.image;
-		await deleteImage(userImage)
-		await userModel.findByIdAndDelete({ _id: id, isAdmin: false });
 
+		await deleteUserById(userModel, id, option)
 		return successResponce(res, {
 			message: "user deleted successfuully",
 			statusCode: 200,
@@ -89,73 +65,73 @@ const deleteUser = async (req, res, next) => {
 const updateUserById = async (req, res, next) => {
 	try {
 		const id = req.params.id;
-		const userOption = {new: true, runValidators: true, context: 'query'};
-		const user = await findWithId(userModel, id, userOption);
-		// const {name, password, address, phone,email} = req.body
+		const userOption = { new: true, runValidators: true, context: "query" };
+		const bodyData = req.body;
 		const image = req.file;
-		const update = {};
-
-		for(let key in req.body){
-			if(["name", "email", "phone", "address", "password"].includes(key)){
-				update[key] = req.body[key];
-			}
-		}
-		if(image){
-			if(image.size > 1024 * 1024 * 2){
-				throw createHttpError(400, "file size id too large. it must greter then 2mb")
-			}
-			update.image = image.buffer.toString("base64")
-		}
-		const upadateUser = await userModel.findByIdAndUpdate(id,update,userOption)
+		const { upadateUser } = await UpdateUser(id, image, bodyData, userOption)
 		return successResponce(res, {
 			message: "user updated successfully",
 			statusCode: 200,
 			success: true,
-			payload: {upadateUser}
+			payload: { upadateUser },
 		});
 	} catch (error) {
 		next(error);
 	}
 };
-const banUserById = async (req, res, next) => {
+
+const manageUser = async (req, res, next) => {
 	try {
 		const id = req.params.id;
-		const userOption = {};
-		const user = await findWithId(userModel, id, userOption);
-		const upadateUser = await userModel.findByIdAndUpdate(id,{isBanned: true},userOption)
-		if(user.isBanned){
-			throw createHttpError(401, "user is already banned")
-		}
+		const action = req.body.action;
+		
+		const {successMessage,upadateUser} = await manageUserService(id,action)
+
 		return successResponce(res, {
-			message: "user was banned successfully",
+			message: successMessage,
 			statusCode: 200,
 			success: true,
-			payload: {upadateUser}
+			payload: {upadateUser},
 		});
 	} catch (error) {
 		next(error);
 	}
 };
 
-const unBanUserById = async (req, res, next) => {
+const updatePassword = async (req, res, next) => {
 	try {
-		const id = req.params.id;
-		const userOption = {};
-		const user = await findWithId(userModel, id, userOption);
-		const upadateUser = await userModel.findByIdAndUpdate(id,{isBanned: false},userOption)
-		if(!user.isBanned){
-			throw createHttpError(401, "user is already unbanned")
+		const {email, oldPassword, newPassword, confirmPassword} = req.body;
+		const user = await  userModel.findOne({email});
+		
+		if(!user.email){
+			throw createHttpError(404, "User dose not exis with this emaile")
+		}
+		console.log(user);
+		const isPasswordEqual = await bcrypt.compare(oldPassword, user.password);
+		console.log(isPasswordEqual);
+		if(!isPasswordEqual){
+			throw createHttpError(400, "old password is wrong")
 		}
 
 		return successResponce(res, {
-			message: "User was unBanned successfully",
+			message: "password update successfull",
 			statusCode: 200,
 			success: true,
-			payload: {upadateUser}
+			payload: {} ,
 		});
 	} catch (error) {
+		console.log(error);
 		next(error);
 	}
 };
 
-module.exports = { getUsers, getUser, deleteUser, updateUserById, banUserById, unBanUserById };
+
+
+module.exports = {
+	getUsers,
+	getUser,
+	deleteUser,
+	updateUserById,
+	manageUser,
+	updatePassword
+};

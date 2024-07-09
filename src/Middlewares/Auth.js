@@ -48,6 +48,7 @@ const isLogedOut = async (req, res, next) => {
 				if (decoded) {
 					throw createHttpError(400, "user already logedin ");
 				}
+				next()
 			} catch (error) {
 				throw error;
 			}

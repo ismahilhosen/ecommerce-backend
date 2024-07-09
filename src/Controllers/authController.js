@@ -32,11 +32,12 @@ const Signup = async (req, res, next) => {
 		});
 
 		UserModel.password = await bcrypt.hash(password, 10);
+		console.log(password);
 		const token = createJwtToken(
 			{
 				name,
 				email,
-				password,
+				password: UserModel.password, //change password
 				phone,
 				address,
 				image: req.file
@@ -57,6 +58,7 @@ const Signup = async (req, res, next) => {
 		};
 		const payload = {
 			token,
+			UserModel
 		};
 		try {
 			// await emailSendWithNodeMailer(emailInfo);
@@ -77,11 +79,12 @@ const accountActive = async (req, res, next) => {
 	try {
 		const { token } = req.body;
 		const decode = jwt.verify(token, jwtSecret);
-		await userModel.create(decode);
+		const result = await userModel.create(decode);
 
 		successResponce(res, {
 			statusCode: 200,
 			message: "data save successfully",
+			payload: result
 		});
 	} catch (error) {
 		next(error);
