@@ -5,7 +5,9 @@ const { createJwtToken } = require("../helper/createJWTToken");
 const { successResponce } = require("./responceController");
 const emailSendWithNodeMailer = require("../helper/email");
 const createHttpError = require("http-errors");
-const { clientUrl } = require("../Config/secret");
+const { clientUrl, jwtRefreshTokenKey } = require("../Config/secret");
+const { setAccesToken, setRefreshToken } = require("../helper/cookie");
+const { isUserExits } = require("../helper/isUserExits");
 require("dotenv").config();
 
 const jwtSecret = process.env.JWT_SECRET;
@@ -14,7 +16,7 @@ const Signup = async (req, res, next) => {
 	try {
 		const { name, email, password, phone, address, isAdmin, isBanned } =
 			req.body;
-		const user = await userModel.findOne({ email });
+		const user = await isUserExits(email);
 		if (user) {
 			return res.status(409).json({
 				message: "user already created",
@@ -32,13 +34,13 @@ const Signup = async (req, res, next) => {
 		});
 
 		UserModel.password = await bcrypt.hash(password, 10);
-		console.log(password);
 		const token = createJwtToken(
 			{
 				name,
 				email,
 				password: UserModel.password, //change password
 				phone,
+				isAdmin,
 				address,
 				image: req.file
 					? req.file.buffer.toString("base64")
@@ -58,7 +60,7 @@ const Signup = async (req, res, next) => {
 		};
 		const payload = {
 			token,
-			UserModel
+			UserModel,
 		};
 		try {
 			// await emailSendWithNodeMailer(emailInfo);
@@ -75,6 +77,7 @@ const Signup = async (req, res, next) => {
 		next(error);
 	}
 };
+
 const accountActive = async (req, res, next) => {
 	try {
 		const { token } = req.body;
@@ -84,7 +87,7 @@ const accountActive = async (req, res, next) => {
 		successResponce(res, {
 			statusCode: 200,
 			message: "data save successfully",
-			payload: result
+			payload: result,
 		});
 	} catch (error) {
 		next(error);
@@ -112,28 +115,31 @@ const Login = async (req, res, next) => {
 		if (user.isBanned) {
 			throw createHttpError(409, "user is banned");
 		}
-		const accessToken = createJwtToken({user}, jwtSecret, "24h");
+		const accessToken = createJwtToken({ user }, jwtSecret, "24h");
+		await setAccesToken(res,accessToken)
 
-		res.cookie("accessToken", accessToken, {
-			maxAge: 60 * 60 * 60 * 1000,
-			secure: true,
-			httpOnly: true,
-		});
+		const refreshToken = createJwtToken({ user }, jwtRefreshTokenKey, "7d");
+		await setRefreshToken(res, refreshToken)
 
-		res.status(200).json({
+
+		successResponce(res,{
+			statusCode: 200,
 			message: "login success",
-			success: true,
-			jwtToken: accessToken,
-			email: user.email,
-			name: user.name,
-		});
+			payload: {
+				accessToken,
+				email: user.email,
+				name: user.name
+			}
+		})
 	} catch (error) {
 		next(error);
 	}
 };
+
 const Logout = async (req, res, next) => {
 	try {
 		res.clearCookie("accessToken");
+		res.clearCookie("refreshToken");
 
 		successResponce(res, {
 			message: "logout seccessful",
@@ -144,10 +150,53 @@ const Logout = async (req, res, next) => {
 	}
 };
 
+const refreshToken = async (req, res, next) => {
+	try {
+		const oldRefreshToken = req.cookies.refreshToken;
+		const decoded = jwt.verify(oldRefreshToken, jwtRefreshTokenKey);
+
+		if (!decoded) {
+			throw createHttpError(401, "refresh token is expire please login again");
+		}
+		const accessToken = createJwtToken(decoded.user, jwtSecret, "24h");
+		await setRefreshToken(res, refreshToken)
+
+		successResponce(res, {
+			statusCode: 200,
+			message: "access token genareted successfully",
+			payload: accessToken,
+		});
+	} catch (error) {
+		next(error);
+	}
+};
+
+const protectedRoute = async (req, res, next) => {
+	try {
+		const accessToken = req.cookies.accessToken;
+		const decoded = jwt.verify(accessToken, jwtSecret);
+
+		if (!decoded) {
+			throw createHttpError(401, "refresh token is expire please login again");
+		}
+		successResponce(res, {
+			statusCode: 200,
+			message: "protected access successfully",
+			payload: {},
+		});
+	} catch (error) {
+		next(error);
+	}
+};
+
+
+
 module.exports = {
 	Signup,
 	Login,
 	jwtSecret,
 	accountActive,
 	Logout,
+	refreshToken,
+	protectedRoute
 };

@@ -39,6 +39,23 @@ const loginValidataion = async(req, res, next)=>{
     next()
 }
 
-module.exports = {loginValidataion, signupValidation}
+const passwordUpdateValidation = async(req, res, next ) =>{
+    const schema = Joi.object({
+        email: Joi.string().required().email(),
+        oldPassword: Joi.string().required().max(100).min(6),
+        newPassword: Joi.string().required().max(100).min(6),
+        confirmPassword: Joi.string().required().max(100).min(6),
+    })
+    const {error} = schema.validate(req.body)
+    if(error){
+        return res.status(209).json({
+             message: "input error",
+             error: error.details[0].message
+         })
+     }
+     next()
+}
+
+module.exports = {loginValidataion, signupValidation, passwordUpdateValidation}
 
 

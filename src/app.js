@@ -3,7 +3,7 @@ const express = require("express");
 const app = express();
 const createError = require("http-errors");
 const cors = require("cors");
-const cookieParser = require('cookie-parser')
+const cookieParser = require("cookie-parser");
 const morgan = require("morgan");
 const bodyParser = require("body-parser");
 const xssClean = require("xss-clean");
@@ -15,14 +15,12 @@ const { UsersRoute } = require("./Routes/UsersRoute");
 const { errorResponce } = require("./Controllers/responceController");
 const authRoute = require("./Routes/authRoute");
 
-
-
 //middeleware
 app.use(bodyParser.json());
 app.use(cors());
 app.use(morgan("dev"));
 app.use(xssClean());
-app.use(cookieParser())
+app.use(cookieParser());
 
 const limiter = expressLimit({
 	windowMs: 1 * 60 * 1000,
@@ -32,9 +30,8 @@ const limiter = expressLimit({
 
 app.use(limiter);
 
-
 app.use("/api/v1/users", UsersRoute);
-app.use("/api/v1/auth", authRoute)
+app.use("/api/v1/auth", authRoute);
 //client error
 
 app.use((req, res, next) => {
@@ -48,6 +45,5 @@ app.use((err, req, res, next) => {
 		message: err.message,
 	});
 });
-
 
 module.exports = app;

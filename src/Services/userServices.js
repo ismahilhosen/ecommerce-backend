@@ -3,6 +3,12 @@ const { userModel } = require("../Models/usersModel");
 const { findWithId } = require("./findItem");
 const deleteImage = require("../helper/deleteImage");
 const { default: mongoose } = require("mongoose");
+const bcrypt = require("bcrypt");
+const { createJwtToken } = require("../helper/createJWTToken");
+const { jwtResetPsswordKey } = require("../Config/secret");
+const jwt = require("jsonwebtoken")
+const emailSendWithNodeMailer = require("../helper/email");
+const { isUserExits } = require("../helper/isUserExits");
 
 const findUsers = async (search, limit, page, skipValue) => {
 	try {
@@ -43,7 +49,7 @@ const findUserById = async (userModel, id, option = {}) => {
 		const user = await findWithId(userModel, id, option);
 		return { user };
 	} catch (error) {
-		if(error instanceof mongoose.Error.CastError){
+		if (error instanceof mongoose.Error.CastError) {
 			throw createHttpError(400, "Invalid Id");
 		}
 		throw error;
@@ -57,14 +63,14 @@ const deleteUserById = async (userModel, id, option) => {
 		// await deleteImage(userImage);
 		await userModel.findByIdAndDelete({ _id: id, isAdmin: false });
 	} catch (error) {
-		if(error instanceof mongoose.Error.CastError){
+		if (error instanceof mongoose.Error.CastError) {
 			throw createHttpError(400, "Invalid Id");
 		}
 		throw error;
 	}
 };
 
-const UpdateUser = async (id,image, bodyData, userOption) => {
+const UpdateUser = async (id, image, bodyData, userOption) => {
 	try {
 		const user = await findWithId(userModel, id, userOption);
 		// const {name, password, address, phone,email} = req.body
@@ -89,11 +95,97 @@ const UpdateUser = async (id,image, bodyData, userOption) => {
 			update,
 			userOption
 		);
-		return {upadateUser}
+		return { upadateUser };
 	} catch (error) {
-		if(error instanceof mongoose.Error.CastError){
+		if (error instanceof mongoose.Error.CastError) {
 			throw createHttpError(400, "Invalid Id");
 		}
+		throw error;
+	}
+};
+const UpdateUserPassword = async (
+	email,
+	oldPassword,
+	newPassword,
+	confirmPassword
+) => {
+	try {
+		const user = await isUserExits(email);
+
+		if (!user.email) {
+			throw createHttpError(404, "User dose not exis with this email");
+		}
+		const isPasswordEqual = await bcrypt.compare(oldPassword, user.password);
+		if (!isPasswordEqual) {
+			throw createHttpError(400, "old password is wrong");
+		}
+		if (newPassword !== confirmPassword) {
+			throw createHttpError(400, "confirm password dose not match");
+		}
+		const password = await bcrypt.hash(newPassword, 10);
+		const filter = {
+			email,
+		};
+		const update = { password: password };
+		const options = { new: true };
+		const result = await userModel
+			.findOneAndUpdate(filter, update, options)
+			.select("-password");
+		return result;
+	} catch (error) {
+		if (error instanceof mongoose.Error.CastError) {
+			throw createHttpError(400, "Invalid Id");
+		}
+		throw error;
+	}
+};
+
+const fogetUserPassword = async (email) => {
+	try {
+		const user = await isUserExits(email);
+		if (!user) {
+			throw createHttpError(404, "user dose not exist please signup");
+		}
+		const token = await createJwtToken({ email }, jwtResetPsswordKey, "10m");
+		const emailInfo = {
+			email,
+			subject: "Verify Your Account ",
+			html: `
+			<h2>dear ${user.name}</h2>
+			<p> <a href="/api/v1/auth/reset-password/${token}">reset password</a></p>
+		
+			`,
+		};
+		// await emailSendWithNodeMailer(emailInfo);
+
+		return token;
+	} catch (error) {
+		throw error;
+	}
+};
+
+const resetUserPassword = async (token, password) => {
+	try {
+		const { email } = await jwt.verify(token, jwtResetPsswordKey);
+		if (!email) {
+			throw createHttpError(400, "jwt token is wrong and expire");
+		}
+		const newPassword = await bcrypt.hash(password, 10);
+		const filter = {
+			email,
+		};
+		const update = {
+			password: newPassword,
+		};
+		const options = {
+			new: true,
+		};
+		const user = await userModel
+			.findOneAndUpdate(filter, update, options)
+			.select("-password");
+
+		return user;
+	} catch (error) {
 		throw error;
 	}
 };
@@ -130,4 +222,13 @@ const manageUserService = async (id, action) => {
 	}
 };
 
-module.exports = { manageUserService, findUsers, findUserById, deleteUserById, UpdateUser };
+module.exports = {
+	manageUserService,
+	findUsers,
+	findUserById,
+	deleteUserById,
+	UpdateUser,
+	UpdateUserPassword,
+	fogetUserPassword,
+	resetUserPassword,
+};
