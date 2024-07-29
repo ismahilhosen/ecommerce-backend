@@ -14,9 +14,11 @@ require("./Config/db");
 const { UsersRoute } = require("./Routes/UsersRoute");
 const { errorResponce } = require("./Controllers/responceController");
 const authRoute = require("./Routes/authRoute");
+const categoryRoute = require("./Routes/categoryRoute");
 
 //middeleware
 app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({extended: true}));
 app.use(cors());
 app.use(morgan("dev"));
 app.use(xssClean());
@@ -32,6 +34,9 @@ app.use(limiter);
 
 app.use("/api/v1/users", UsersRoute);
 app.use("/api/v1/auth", authRoute);
+app.use("/api/v1/categorys", categoryRoute);
+
+
 //client error
 
 app.use((req, res, next) => {

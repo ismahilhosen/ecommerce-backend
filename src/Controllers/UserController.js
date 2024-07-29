@@ -1,10 +1,5 @@
-const createHttpError = require("http-errors");
 const { userModel } = require("../Models/usersModel");
 const { successResponce } = require("./responceController");
-const { findWithId } = require("../Services/findItem");
-const deleteImage = require("../helper/deleteImage");
-const bcrypt = require("bcrypt");
-const jwt = require("jsonwebtoken");
 const {
 	manageUserService,
 	findUsers,
@@ -15,10 +10,7 @@ const {
 	fogetUserPassword,
 	resetUserPassword,
 } = require("../Services/userServices");
-const { jwtResetPsswordKey } = require("../Config/secret");
-const { createJwtToken } = require("../helper/createJWTToken");
-const emailSendWithNodeMailer = require("../helper/email");
-const { options } = require("joi");
+
 
 const handleGetUsers = async (req, res, next) => {
 	try {

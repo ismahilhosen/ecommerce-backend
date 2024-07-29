@@ -20,6 +20,6 @@ authRoute.post("/logout", isLogedIn, Logout);
 authRoute.post("/signup", upload.single("image"), signupValidation, Signup);
 authRoute.post("/verify", accountActive);
 authRoute.get("/refresh-token", refreshToken);
-authRoute.get("/refresh-token", protectedRoute);
+authRoute.get("/protect-route", protectedRoute);
 
 module.exports = authRoute;
