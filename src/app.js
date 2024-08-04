@@ -15,12 +15,14 @@ const { UsersRoute } = require("./Routes/UsersRoute");
 const { errorResponce } = require("./Controllers/responceController");
 const authRoute = require("./Routes/authRoute");
 const categoryRoute = require("./Routes/categoryRoute");
+const seedRoute = require("./Routes/seedRoute");
+const productRoute = require("./Routes/productRoute");
 
 //middeleware
 app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({extended: true}));
+// app.use(bodyParser.urlencoded({extended: true}));
 app.use(cors());
-app.use(morgan("dev"));
+app.use(morgan("dev")); 
 app.use(xssClean());
 app.use(cookieParser());
 
@@ -32,9 +34,11 @@ const limiter = expressLimit({
 
 app.use(limiter);
 
+app.use("/api/v1/seed", seedRoute);
 app.use("/api/v1/users", UsersRoute);
 app.use("/api/v1/auth", authRoute);
 app.use("/api/v1/categorys", categoryRoute);
+app.use("/api/v1/products", productRoute);
 
 
 //client error

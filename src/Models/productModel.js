@@ -16,12 +16,11 @@ const productSchema = new Schema(
 			lowercase: true,
 			unique: true,
 		},
-		discription: {
+		description: {
 			type: String,
-			required: [true, "discription must be required"],
+			required: [true, "description must be required"],
 			unique: true,
-			minLength: 3,
-			trim: true,
+			trim: true
 		},
 		price: {
 			type: Number,
