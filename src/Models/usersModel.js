@@ -29,7 +29,7 @@ const userSchema = new Schema(
 			type: String,
 		},
 		image: {
-			type: Buffer,
+			type: String,
 			contentType: String,
 			default: "../../public/images/users/download.jpeg"
 		},

@@ -16,6 +16,11 @@ const Signup = async (req, res, next) => {
 	try {
 		const { name, email, password, phone, address, isAdmin, isBanned } =
 			req.body;
+		let image = req.file?.path;
+		// if(!req.file.path){
+		// 	image = "../../public/images/users/download.jpeg";
+		// }
+			
 		const user = await isUserExits(email);
 		if (user) {
 			return res.status(409).json({
@@ -31,6 +36,7 @@ const Signup = async (req, res, next) => {
 			address,
 			isAdmin,
 			isBanned,
+			image
 		});
 
 		UserModel.password = await bcrypt.hash(password, 10);
@@ -42,9 +48,7 @@ const Signup = async (req, res, next) => {
 				phone,
 				isAdmin,
 				address,
-				image: req.file
-					? req.file.buffer.toString("base64")
-					: "../../public/images/users/download.jpeg",
+				image: image
 			},
 			jwtSecret,
 			"10m"
@@ -74,6 +78,7 @@ const Signup = async (req, res, next) => {
 			payload,
 		});
 	} catch (error) {
+		console.log(error);
 		next(error);
 	}
 };
