@@ -1,5 +1,4 @@
 const createHttpError = require("http-errors");
-const { categoryModel } = require("../Models/categoryModel");
 const { getCategories, createCategories, getCategory, updateCategory, deleteCategory } = require("../Services/categoryServices");
 const { successResponce } = require("./responceController");
 require("dotenv").config();

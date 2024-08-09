@@ -42,7 +42,7 @@ const productStorage = multer.diskStorage({
 
   const productFileFilter = (req, file, cb)=>{
     const extName = path.extname(file.originalname);
-    if(!UPLODE_PRODUCT_IMAGE_DIR.includes(extName.substring(1))){
+    if(!FILE_EXTRANTION.includes(extName.substring(1))){
       return cb(createHttpError(400,"This types of file is not allowed"));
     }
     cb(null, true);

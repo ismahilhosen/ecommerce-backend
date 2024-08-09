@@ -1,7 +1,7 @@
 const { required } = require("joi");
 const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
-
+const { categoryModel } = require("../Models/categoryModel");
 const productSchema = new Schema(
 	{
 		name: {
@@ -20,7 +20,7 @@ const productSchema = new Schema(
 			type: String,
 			required: [true, "description must be required"],
 			unique: true,
-			trim: true
+			trim: true,
 		},
 		price: {
 			type: Number,
@@ -56,15 +56,15 @@ const productSchema = new Schema(
 			default: 0,
 		},
 		image: {
-			type: Buffer,
-            required: true,
+			type: String,
+			required: true,
 			contentType: String,
 		},
-        category:{
-            type: Schema.Types.ObjectId,
-            ref: "categoryModel",
-            required: true
-        }
+		category: {
+			type: mongoose.Schema.Types.ObjectId,
+			ref: "categoryModel",
+			required: true,
+		},
 	},
 	{ timestamps: true }
 );
