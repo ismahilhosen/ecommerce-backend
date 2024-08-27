@@ -6,7 +6,7 @@ const { deleteImage } = require("../helper/deleteImage");
 const { default: mongoose } = require("mongoose");
 const { productImageUpdate } = require("../Middlewares/uplodeFile");
 const { options } = require("joi");
-const { deleteFileFromCloudinary, publicIdwithoutExtrentionFormetUrl } = require("../helper/cloudinary");
+const { deleteFileFromCloudinary, publicIdwithoutExtrentionFormetUrl, uplodeImageCloudinary } = require("../helper/cloudinary");
 require("dotenv").config();
 
 const createProduct = async (image, req) => {
@@ -105,6 +105,8 @@ const deleteProduct = async (slug) => {
 const UpdateProduct = async (slug, image, req, userOption) => {
 	try {
 		// const {name, password, address, phone,email} = req.body
+		const product = await productModel.findOne({slug})
+		
 		const update = {};
 		const bodyData = req.body;
 
@@ -132,16 +134,20 @@ const UpdateProduct = async (slug, image, req, userOption) => {
 					"file size id too large. it must greter then 2mb"
 				);
 			}
-			update.image = image.path;
+			
+			const uplodeImage = await uplodeImageCloudinary(image.path, "ProductImage")
+			update.image = uplodeImage;
+			console.log(uplodeImage, image.path);
+			
 		}
 		const updateProduct = await productModel.findOneAndUpdate({ slug }, update);
 
 		if (!updateProduct) {
-			await deleteImage(update.image);
 			throw createHttpError(404, "product dose not exsit with this slug");
 		}
-		if (image) {
-			await deleteImage(updateProduct.image);
+		if (product.image) {
+			const publicId = await publicIdwithoutExtrentionFormetUrl(product.image)
+			await deleteFileFromCloudinary("ProductImage",publicId, "product" )
 		}
 		return updateProduct;
 	} catch (error) {

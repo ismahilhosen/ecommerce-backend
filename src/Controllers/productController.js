@@ -96,7 +96,7 @@ const hendleUpdateProduct = async (req, res, next) => {
 		
 		const image = req.file;
 
-		const upadateProduct  = await UpdateProduct(slug, image, req, userOption, filter);
+		const upadateProduct  = await UpdateProduct(slug, image, req, userOption);
 		return successResponce(res, {
 			message: "user updated successfully",
 			statusCode: 200,

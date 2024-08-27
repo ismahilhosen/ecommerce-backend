@@ -9,7 +9,7 @@ const { jwtResetPsswordKey } = require("../Config/secret");
 const jwt = require("jsonwebtoken");
 const emailSendWithNodeMailer = require("../helper/email");
 const { isUserExits } = require("../helper/isUserExits");
-const { publicIdwithoutExtrentionFormetUrl, deleteFileFromCloudinary } = require("../helper/cloudinary");
+const { publicIdwithoutExtrentionFormetUrl, deleteFileFromCloudinary, uplodeImageCloudinary } = require("../helper/cloudinary");
 const { cloudinary } = require("../Config/cloudinary");
 
 const findUsers = async (search, limit, page, skipValue) => {
@@ -84,7 +84,6 @@ const UpdateUser = async (id, image, bodyData, userOption) => {
 		const exeistingUser = await userModel.findOne({
 			_id: id
 		})
-		console.log(exeistingUser);
 		// const {name, password, address, phone,email} = req.body
 		const update = {};
 
@@ -100,11 +99,16 @@ const UpdateUser = async (id, image, bodyData, userOption) => {
 					"file size id too large. it must greter then 2mb"
 				);
 			}
-
-			const result = await deleteFileFromCloudinary("userImage",image, "user")
-			update.image = result.secure_url;
+			const result = await uplodeImageCloudinary(image.path, "userImage")
+			update.image = result;
 		}
+		console.log(update);
+		
 		const upadateUser = await userModel.findByIdAndUpdate(id, update);
+		if (exeistingUser.image) {
+			const publicId = await publicIdwithoutExtrentionFormetUrl(exeistingUser.image)
+			await deleteFileFromCloudinary("userImage",publicId, "user" )
+		}
 
 		return { upadateUser, exeistingUser};
 	} catch (error) {

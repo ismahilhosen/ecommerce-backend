@@ -12,8 +12,26 @@ const deleteFileFromCloudinary = async (folderName, publicId, model) => {
 	try {
 		const { result } = await cloudinary.uploader.destroy(`${folderName}/${publicId}`);
 		if (result !== "ok") {
-            throw createHttpError(400, `${model} image uplode fall`)
+            throw createHttpError(400, `${model} image delete fall`)
 		}
+	} catch (error) {
+        throw error
+    }
+};
+
+const uplodeImageCloudinary = async (path, folderName) => {
+	try {
+		const result = await cloudinary.uploader.upload(path, 
+			{
+				folder: folderName
+			}
+		)
+		if(!result){
+			throw createHttpError(400, "image uplode fall")
+		}
+		const url = result.secure_url
+		return url
+		
 	} catch (error) {
         throw error
     }
@@ -21,4 +39,5 @@ const deleteFileFromCloudinary = async (folderName, publicId, model) => {
 module.exports = {
 	publicIdwithoutExtrentionFormetUrl,
 	deleteFileFromCloudinary,
+	uplodeImageCloudinary
 };

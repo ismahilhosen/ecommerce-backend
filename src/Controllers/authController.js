@@ -66,7 +66,6 @@ const Signup = async (req, res, next) => {
 		};
 		const payload = {
 			token,
-			UserModel,
 		};
 		try {
 			// await emailSendWithNodeMailer(emailInfo);
