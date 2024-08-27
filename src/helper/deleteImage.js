@@ -10,4 +10,4 @@ const deleteImage = async(imagePath)=>{
     }
 } 
 
-module.exports = deleteImage;
+module.exports = {deleteImage};

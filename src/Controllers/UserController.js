@@ -10,6 +10,8 @@ const {
 	fogetUserPassword,
 	resetUserPassword,
 } = require("../Services/userServices");
+const { publicIdwithoutExtrentionFormetUrl } = require("../helper/cloudinary");
+const { cloudinary } = require("../Config/cloudinary");
 
 
 const handleGetUsers = async (req, res, next) => {
@@ -76,10 +78,11 @@ const handleDeleteUser = async (req, res, next) => {
 const handleUpdateUserById = async (req, res, next) => {
 	try {
 		const id = req.params.id;
-		const userOption = { new: true, runValidators: true, context: "query" };
+		const userOption = {context: "query" };
 		const bodyData = req.body;
 		const image = req.file;
 		const { upadateUser } = await UpdateUser(id, image, bodyData, userOption);
+
 		return successResponce(res, {
 			message: "user updated successfully",
 			statusCode: 200,

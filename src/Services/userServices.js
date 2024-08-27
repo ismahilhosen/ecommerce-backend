@@ -6,9 +6,11 @@ const { default: mongoose } = require("mongoose");
 const bcrypt = require("bcrypt");
 const { createJwtToken } = require("../helper/createJWTToken");
 const { jwtResetPsswordKey } = require("../Config/secret");
-const jwt = require("jsonwebtoken")
+const jwt = require("jsonwebtoken");
 const emailSendWithNodeMailer = require("../helper/email");
 const { isUserExits } = require("../helper/isUserExits");
+const { publicIdwithoutExtrentionFormetUrl, deleteFileFromCloudinary } = require("../helper/cloudinary");
+const { cloudinary } = require("../Config/cloudinary");
 
 const findUsers = async (search, limit, page, skipValue) => {
 	try {
@@ -58,9 +60,16 @@ const findUserById = async (userModel, id, option = {}) => {
 
 const deleteUserById = async (userModel, id, option) => {
 	try {
-		const user = await findWithId(userModel, id, option);
-		const userImage = user.image;
-		// await deleteImage(userImage);
+		const exeistingUser = await userModel.findOne({
+			_id: id
+		})
+		if(!exeistingUser){
+			throw createHttpError(404, "no user with this id")
+		}
+		if (exeistingUser.image) {
+			const publicId = await publicIdwithoutExtrentionFormetUrl(exeistingUser.image);
+			await deleteFileFromCloudinary("userImage", publicId, "user")
+		}
 		await userModel.findByIdAndDelete({ _id: id, isAdmin: false });
 	} catch (error) {
 		if (error instanceof mongoose.Error.CastError) {
@@ -72,7 +81,10 @@ const deleteUserById = async (userModel, id, option) => {
 
 const UpdateUser = async (id, image, bodyData, userOption) => {
 	try {
-		const user = await findWithId(userModel, id, userOption);
+		const exeistingUser = await userModel.findOne({
+			_id: id
+		})
+		console.log(exeistingUser);
 		// const {name, password, address, phone,email} = req.body
 		const update = {};
 
@@ -88,14 +100,13 @@ const UpdateUser = async (id, image, bodyData, userOption) => {
 					"file size id too large. it must greter then 2mb"
 				);
 			}
-			update.image = image.buffer.toString("base64");
+
+			const result = await deleteFileFromCloudinary("userImage",image, "user")
+			update.image = result.secure_url;
 		}
-		const upadateUser = await userModel.findByIdAndUpdate(
-			id,
-			update,
-			userOption
-		);
-		return { upadateUser };
+		const upadateUser = await userModel.findByIdAndUpdate(id, update);
+
+		return { upadateUser, exeistingUser};
 	} catch (error) {
 		if (error instanceof mongoose.Error.CastError) {
 			throw createHttpError(400, "Invalid Id");

@@ -8,6 +8,8 @@ const createHttpError = require("http-errors");
 const { clientUrl, jwtRefreshTokenKey } = require("../Config/secret");
 const { setAccesToken, setRefreshToken } = require("../helper/cookie");
 const { isUserExits } = require("../helper/isUserExits");
+const { cloudinary } = require("../Config/cloudinary");
+
 require("dotenv").config();
 
 const jwtSecret = process.env.JWT_SECRET;
@@ -20,7 +22,7 @@ const Signup = async (req, res, next) => {
 		// if(!req.file.path){
 		// 	image = "../../public/images/users/download.jpeg";
 		// }
-			
+
 		const user = await isUserExits(email);
 		if (user) {
 			return res.status(409).json({
@@ -36,7 +38,7 @@ const Signup = async (req, res, next) => {
 			address,
 			isAdmin,
 			isBanned,
-			image
+			image,
 		});
 
 		UserModel.password = await bcrypt.hash(password, 10);
@@ -48,7 +50,7 @@ const Signup = async (req, res, next) => {
 				phone,
 				isAdmin,
 				address,
-				image: image
+				image: image,
 			},
 			jwtSecret,
 			"10m"
@@ -87,6 +89,13 @@ const accountActive = async (req, res, next) => {
 	try {
 		const { token } = req.body;
 		const decode = jwt.verify(token, jwtSecret);
+		if (decode.image) {
+			const responce = await cloudinary.uploader.upload(decode.image, {
+				folder: "userImage",
+			});
+			decode.image = responce.secure_url;
+		}
+
 		const result = await userModel.create(decode);
 
 		successResponce(res, {
@@ -121,21 +130,20 @@ const Login = async (req, res, next) => {
 			throw createHttpError(409, "user is banned");
 		}
 		const accessToken = createJwtToken({ user }, jwtSecret, "24h");
-		await setAccesToken(res,accessToken)
+		await setAccesToken(res, accessToken);
 
 		const refreshToken = createJwtToken({ user }, jwtRefreshTokenKey, "7d");
-		await setRefreshToken(res, refreshToken)
+		await setRefreshToken(res, refreshToken);
 
-
-		successResponce(res,{
+		successResponce(res, {
 			statusCode: 200,
 			message: "login success",
 			payload: {
 				accessToken,
 				email: user.email,
-				name: user.name
-			}
-		})
+				name: user.name,
+			},
+		});
 	} catch (error) {
 		next(error);
 	}
@@ -164,7 +172,7 @@ const refreshToken = async (req, res, next) => {
 			throw createHttpError(401, "refresh token is expire please login again");
 		}
 		const accessToken = createJwtToken(decoded.user, jwtSecret, "24h");
-		await setRefreshToken(res, refreshToken)
+		await setAccesToken(res, accessToken);
 
 		successResponce(res, {
 			statusCode: 200,
@@ -194,8 +202,6 @@ const protectedRoute = async (req, res, next) => {
 	}
 };
 
-
-
 module.exports = {
 	Signup,
 	Login,
@@ -203,5 +209,5 @@ module.exports = {
 	accountActive,
 	Logout,
 	refreshToken,
-	protectedRoute
+	protectedRoute,
 };

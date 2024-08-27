@@ -10,9 +10,9 @@ const {
 
 // save image type string on server
 const userStorage = multer.diskStorage({
-    destination: function (req, file, cb) {
-      cb(null, UPLODE_USER_IMAGE_DIR)
-    },
+    // destination: function (req, file, cb) {
+    //   cb(null, UPLODE_USER_IMAGE_DIR)
+    // },
     filename: function (req, file, cb) {
         const extName = path.extname(file.originalname);
       const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9)
@@ -30,9 +30,9 @@ const userStorage = multer.diskStorage({
   }
 // save image type string on server
 const productStorage = multer.diskStorage({
-    destination: function (req, file, cb) {
-      cb(null, UPLODE_PRODUCT_IMAGE_DIR)
-    },
+    // destination: function (req, file, cb) {
+    //   cb(null, UPLODE_PRODUCT_IMAGE_DIR)
+    // },
     filename: function (req, file, cb) {
         const extName = path.extname(file.originalname);
       const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9)
